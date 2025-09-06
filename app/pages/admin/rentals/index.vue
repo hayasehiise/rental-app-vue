@@ -38,6 +38,7 @@
         <UForm
           :schema="createSchema"
           :state="createState"
+          :loading-auto="createLoading"
           class="grid grid-cols-2 gap-2"
           @submit="handleCreate"
         >
@@ -82,6 +83,7 @@
         <UForm
           :schema="editSchema"
           :state="stateEdit"
+          :loading-auto="loadingEdit"
           class="grid grid-cols-2 gap-2"
           @submit="handleUpdate"
         >
