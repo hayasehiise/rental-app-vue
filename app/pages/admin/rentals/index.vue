@@ -128,7 +128,7 @@ import type { RentalType } from "@prisma/client";
 import { useInfiniteScroll } from "@vueuse/core";
 import type { TableColumn } from "@nuxt/ui";
 import * as z from "zod";
-// import type { ComponentPublicInstance } from "vue";
+import type { ComponentPublicInstance } from "vue";
 
 definePageMeta({
   middleware: ["admin"],
@@ -264,7 +264,7 @@ watch(data, (val) => {
 execute();
 
 // hook infinite scroll - targetkan DOM dari element UTable
-const table = useTemplateRef("table");
+const table = useTemplateRef<ComponentPublicInstance>("table");
 onMounted(() => {
   useInfiniteScroll(
     table.value?.$el,
@@ -435,6 +435,7 @@ async function handleUpdate() {
     rentals.value = [];
     pagination.page = 1;
     pagination.hasMore = true;
+
     params.page = pagination.page;
     await execute();
   } catch (err) {
