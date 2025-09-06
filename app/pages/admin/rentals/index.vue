@@ -76,6 +76,50 @@
         </div>
       </template>
     </UModal>
+    <!-- Modal Edit -->
+    <UModal v-model:open="modalEdit" title="Edit Rental">
+      <template #body>
+        <UForm
+          :schema="editSchema"
+          :state="stateEdit"
+          class="grid grid-cols-2 gap-2"
+          @submit="handleUpdate"
+        >
+          <UFormField label="Nama Rental" name="name">
+            <UInput v-model="stateEdit.name" />
+          </UFormField>
+          <UFormField label="Tipe" name="type">
+            <USelect
+              v-model="stateEdit.type"
+              :items="[
+                { label: 'Lapangan', value: 'LAPANGAN' },
+                { label: 'Gedung', value: 'GEDUNG' },
+                { label: 'Kendaraan', value: 'KENDARAAN' },
+              ]"
+              placeholder="Pilih Tipe"
+            />
+          </UFormField>
+          <UFormField label="Deskripsi" name="description">
+            <UTextarea v-model="stateEdit.description" autoresize />
+          </UFormField>
+        </UForm>
+      </template>
+      <template #footer>
+        <div class="flex gap-5">
+          <UButton
+            label="Update"
+            icon="i-tabler-device-floppy"
+            @click="onUpdate"
+          />
+          <UButton
+            label="Cancel"
+            variant="outline"
+            color="neutral"
+            @click="modalEdit = false"
+          />
+        </div>
+      </template>
+    </UModal>
   </UContainer>
 </template>
 
@@ -237,16 +281,6 @@ onMounted(() => {
   );
 });
 
-async function editRental(rental: Rental) {
-  // Bisa buka modal edit nanti disini
-  console.log("Edit Data", rental);
-}
-
-async function deleteRental(id: string) {
-  // bisa buka modal delete rental disini
-  console.log("Hapus Rental", id);
-}
-
 // Search function
 watch(
   () => pagination.search,
@@ -284,6 +318,8 @@ const createState = reactive<Partial<CreateSchema>>({
   type: undefined,
   description: "",
 });
+
+// Loading state
 const createLoading = ref(false);
 
 // function handle create
@@ -295,7 +331,7 @@ async function handleCreate() {
       body: createState,
     });
 
-    // reset form
+    // reset state
     createState.name = undefined;
     createState.type = undefined;
     createState.description = "";
@@ -333,6 +369,101 @@ watch(modalCreate, (val) => {
     createState.description = "";
   }
 });
+
+// ref untuk modal Edit
+const modalEdit = ref(false);
+
+// schema validasi edit
+const editSchema = z.object({
+  id: z.string(),
+  name: z.string().optional(),
+  type: z
+    .enum(["LAPANGAN", "GEDUNG", "KENDARAAN"], "Pilih Tipe yang tersedia")
+    .optional(),
+  description: z.string().optional(),
+});
+type EditSchema = z.output<typeof editSchema>;
+
+// state form edit
+const stateEdit = reactive<Partial<EditSchema>>({
+  id: undefined,
+  name: undefined,
+  type: undefined,
+  description: "",
+});
+
+// Loading State Edit
+const loadingEdit = ref(false);
+
+// function buka modal edit
+async function editRental(rental: Rental) {
+  // Bisa buka modal edit nanti disini
+  stateEdit.id = rental.id;
+  stateEdit.name = rental.name;
+  stateEdit.type = rental.type;
+  stateEdit.description = rental.description ?? "";
+  modalEdit.value = true;
+}
+
+// function handle update
+async function handleUpdate() {
+  try {
+    loadingEdit.value = true;
+    await $fetch(`/api/rentals/${stateEdit.id}`, {
+      method: "PUT",
+      body: {
+        name: stateEdit.name,
+        type: stateEdit.type,
+        description: stateEdit.description,
+      },
+    });
+
+    // reset state
+    stateEdit.id = undefined;
+    stateEdit.name = undefined;
+    stateEdit.type = undefined;
+    stateEdit.description = "";
+    modalEdit.value = false;
+
+    // toast
+    toast.add({
+      title: "Berhasil",
+      description: "Data Berhasil Diedit",
+      color: "success",
+    });
+
+    rentals.value = [];
+    pagination.page = 1;
+    pagination.hasMore = true;
+    params.page = pagination.page;
+    await execute();
+  } catch (err) {
+    toast.add({ title: "Gagal", description: err as string, color: "error" });
+  } finally {
+    loadingEdit.value = false;
+  }
+}
+
+// handle update untuk footer modal
+function onUpdate() {
+  handleUpdate();
+}
+
+// watch untuk reset form update
+watch(modalEdit, (val) => {
+  if (!val) {
+    stateEdit.id = undefined;
+    stateEdit.name = undefined;
+    stateEdit.type = undefined;
+    stateEdit.description = "";
+  }
+});
+
+// open modal delete
+async function deleteRental(id: string) {
+  // bisa buka modal delete rental disini
+  console.log("Hapus Rental", id);
+}
 </script>
 
 <style></style>
